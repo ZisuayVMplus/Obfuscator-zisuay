@@ -1,0 +1,691 @@
+<title>zisuay</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600&display=swap">
+
+<style>
+/* ─── Layout: two-column split editor / output, stacked on mobile ─── */
+:root {
+  --bg:       #0d0f14;
+  --surface:  #141720;
+  --border:   #232838;
+  --fg:       #d4d8e8;
+  --muted:    #5a6080;
+  --accent:   #7c6af7;
+  --accent2:  #50e3c2;
+  --danger:   #f55c7a;
+  --warn:     #f5a623;
+  --success:  #50e3c2;
+  --mono:     'JetBrains Mono', 'Cascadia Code', monospace;
+  --sans:     'Inter', system-ui, sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:      #f5f6fa;
+    --surface: #ffffff;
+    --border:  #dde0ec;
+    --fg:      #1a1d2e;
+    --muted:   #8890b0;
+    --accent:  #5b4de0;
+    --accent2: #00b899;
+    --danger:  #d93a5a;
+    --warn:    #c07800;
+    --success: #00b899;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg:      #f5f6fa;
+  --surface: #ffffff;
+  --border:  #dde0ec;
+  --fg:      #1a1d2e;
+  --muted:   #8890b0;
+  --accent:  #5b4de0;
+  --accent2: #00b899;
+  --danger:  #d93a5a;
+  --warn:    #c07800;
+  --success: #00b899;
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  padding-left: max(0px, env(safe-area-inset-left, 0px));
+  padding-right: max(0px, env(safe-area-inset-right, 0px));
+}
+
+/* ─── Header ─── */
+.header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 max(16px, env(safe-area-inset-left, 0px)) 0 max(16px, env(safe-area-inset-right, 0px));
+  height: 54px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 10;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  z-index: 11;
+  background: var(--surface);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.3px;
+}
+.logo-icon {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: #fff;
+}
+.logo-name { color: var(--fg); }
+.logo-ver  { font-size: 11px; color: var(--muted); margin-left: 4px; font-weight: 400; }
+
+.header-right { display: flex; align-items: center; gap: 8px; }
+
+.btn-icon {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); padding: 6px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  transition: color .15s, background .15s;
+}
+.btn-icon:hover { color: var(--fg); background: var(--border); }
+.btn-icon svg { width: 18px; height: 18px; }
+
+/* ─── Settings bar ─── */
+.settings-bar {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 10px max(16px, env(safe-area-inset-left, 0px));
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.toggle-group { display: flex; align-items: center; gap: 6px; }
+.toggle-label {
+  font-size: 12px; color: var(--muted); font-family: var(--mono);
+  white-space: nowrap;
+}
+
+/* Toggle switch */
+.toggle {
+  position: relative; display: inline-block;
+  width: 32px; height: 18px; flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-slider {
+  position: absolute; inset: 0; border-radius: 9px;
+  background: var(--border); cursor: pointer;
+  transition: background .2s;
+}
+.toggle-slider::before {
+  content: "";
+  position: absolute; left: 2px; top: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--muted);
+  transition: transform .2s, background .2s;
+}
+.toggle input:checked + .toggle-slider { background: var(--accent); }
+.toggle input:checked + .toggle-slider::before {
+  transform: translateX(14px); background: #fff;
+}
+
+.settings-divider {
+  width: 1px; height: 18px; background: var(--border);
+  flex-shrink: 0;
+}
+
+/* ─── Main split ─── */
+.main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 0;
+  overflow: hidden;
+}
+@media (max-width: 680px) {
+  .main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+}
+
+/* ─── Panel ─── */
+.panel {
+  display: flex; flex-direction: column;
+  min-width: 0; min-height: 0;
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+.panel:last-child { border-right: none; }
+
+.panel-header {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 14px;
+  height: 36px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.panel-title {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--muted); letter-spacing: .06em; text-transform: uppercase;
+}
+.panel-actions { display: flex; gap: 4px; }
+
+.btn-sm {
+  font-family: var(--mono); font-size: 11px;
+  padding: 3px 8px; border-radius: 4px;
+  border: 1px solid var(--border);
+  background: none; color: var(--muted);
+  cursor: pointer; transition: all .15s;
+  white-space: nowrap;
+}
+.btn-sm:hover { color: var(--fg); border-color: var(--fg); }
+
+/* ─── Code editor / textarea ─── */
+.editor-wrap {
+  flex: 1; position: relative; overflow: hidden;
+}
+textarea {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 13px; line-height: 1.7;
+  padding: 14px 16px;
+  border: none; outline: none; resize: none;
+  tab-size: 4;
+  caret-color: var(--accent);
+}
+textarea::selection { background: rgba(124,106,247,.25); }
+textarea:focus { background: color-mix(in srgb, var(--bg), var(--accent) 3%); }
+
+.output-area {
+  flex: 1; overflow-y: auto; overflow-x: auto;
+  padding: 14px 16px;
+  font-family: var(--mono); font-size: 13px; line-height: 1.7;
+  white-space: pre-wrap; word-break: break-all;
+  color: var(--fg);
+}
+
+/* ─── Status states ─── */
+.output-placeholder {
+  color: var(--muted); font-style: normal;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; height: 100%;
+  gap: 8px; text-align: center;
+  padding: 24px;
+}
+.output-placeholder svg { color: var(--border); }
+.output-placeholder p { font-size: 12px; max-width: 220px; line-height: 1.5; }
+
+.status-bar {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 14px; height: 26px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 11px; font-family: var(--mono);
+  color: var(--muted);
+}
+.status-dot {
+  display: inline-block; width: 7px; height: 7px;
+  border-radius: 50%; margin-right: 5px;
+  background: var(--muted);
+}
+.status-dot.ok     { background: var(--success); }
+.status-dot.err    { background: var(--danger); }
+.status-dot.busy   { background: var(--warn); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ─── Run button ─── */
+.run-bar {
+  flex-shrink: 0;
+  padding: 10px max(16px, env(safe-area-inset-left, 0px));
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  display: flex; gap: 8px; align-items: center;
+}
+
+.btn-run {
+  flex: 1; max-width: 260px;
+  background: var(--accent);
+  color: #fff; font-family: var(--mono);
+  font-size: 13px; font-weight: 600;
+  padding: 9px 20px; border: none; border-radius: 7px;
+  cursor: pointer; transition: filter .15s, transform .1s;
+  letter-spacing: .02em;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-run:hover  { filter: brightness(1.1); }
+.btn-run:active { transform: scale(.98); }
+.btn-run:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+.btn-run svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+.char-count { font-size: 11px; font-family: var(--mono); color: var(--muted); }
+
+/* ─── Toast ─── */
+.toast {
+  position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  left: 50%; transform: translateX(-50%) translateY(60px);
+  background: var(--surface); color: var(--fg);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 9px 16px; font-size: 12px; font-family: var(--mono);
+  z-index: 100; transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+  white-space: nowrap; pointer-events: none;
+  box-shadow: 0 4px 24px rgba(0,0,0,.3);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ─── API docs expandable ─── */
+.api-bar {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+.api-toggle {
+  width: 100%; text-align: left;
+  background: none; border: none; cursor: pointer;
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 8px max(16px, env(safe-area-inset-left, 0px));
+  display: flex; align-items: center; gap: 6px;
+  transition: color .15s;
+}
+.api-toggle:hover { color: var(--fg); }
+.api-toggle svg { width: 14px; height: 14px; transition: transform .2s; }
+.api-toggle.open svg { transform: rotate(90deg); }
+
+.api-content {
+  display: none; padding: 0 max(16px, env(safe-area-inset-left, 0px)) 14px;
+  overflow: hidden;
+}
+.api-content.open { display: block; }
+
+.api-block {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px 14px;
+  font-family: var(--mono); font-size: 12px;
+  white-space: pre; overflow-x: auto;
+  color: var(--fg); line-height: 1.8;
+}
+.api-key    { color: var(--accent2); }
+.api-str    { color: var(--warn); }
+.api-bool   { color: var(--accent); }
+.api-label  { color: var(--muted); font-size: 11px; margin-bottom: 5px; }
+</style>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">77</div>
+    <span class="logo-name">77fuscator</span>
+    <span class="logo-ver">v0.6.1</span>
+  </div>
+  <div class="header-right">
+    <button class="btn-icon" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- Settings -->
+<div class="settings-bar">
+  <div class="toggle-group">
+    <label class="toggle" title="Encrypt string constants">
+      <input type="checkbox" id="optEncrypt" checked>
+      <span class="toggle-slider"></span>
+    </label>
+    <span class="toggle-label">Encrypt Strings</span>
+  </div>
+  <div class="settings-divider"></div>
+  <div class="toggle-group">
+    <label class="toggle" title="Apply extra compression pass">
+      <input type="checkbox" id="optCompress" checked>
+      <span class="toggle-slider"></span>
+    </label>
+    <span class="toggle-label">Extra Compression</span>
+  </div>
+  <div class="settings-divider"></div>
+  <div class="toggle-group">
+    <label class="toggle" title="Enhanced VM security">
+      <input type="checkbox" id="optSecurity" checked>
+      <span class="toggle-slider"></span>
+    </label>
+    <span class="toggle-label">Enhanced Security</span>
+  </div>
+  <div class="settings-divider"></div>
+  <div class="toggle-group">
+    <label class="toggle" title="Dynamic opcode structure (slow)">
+      <input type="checkbox" id="optDynamic">
+      <span class="toggle-slider"></span>
+    </label>
+    <span class="toggle-label">Dynamic Opcodes</span>
+  </div>
+</div>
+
+<!-- Split editor -->
+<div class="main">
+  <!-- Input panel -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Input — Lua / Luau</span>
+      <div class="panel-actions">
+        <button class="btn-sm" id="clearBtn">clear</button>
+        <button class="btn-sm" id="pasteBtn">paste</button>
+      </div>
+    </div>
+    <div class="editor-wrap">
+      <textarea id="inputCode" spellcheck="false" autocorrect="off" autocapitalize="off"
+        placeholder="-- Paste your Lua / Luau source here
+print('Hello, world!')"></textarea>
+    </div>
+    <div class="status-bar">
+      <span id="inputStatus"><span class="status-dot"></span>ready</span>
+      <span id="inputChars">0 chars</span>
+    </div>
+  </div>
+
+  <!-- Output panel -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Output — obfuscated</span>
+      <div class="panel-actions">
+        <button class="btn-sm" id="copyBtn" disabled>copy</button>
+        <button class="btn-sm" id="downloadBtn" disabled>save .lua</button>
+      </div>
+    </div>
+    <div class="output-area" id="outputArea">
+      <div class="output-placeholder" id="placeholder">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8"/><path d="M12 8v8M8 12h8"/></svg>
+        <p>Obfuscated output will appear here</p>
+      </div>
+    </div>
+    <div class="status-bar">
+      <span id="outputStatus"><span class="status-dot"></span>waiting</span>
+      <span id="outputChars"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Run bar -->
+<div class="run-bar">
+  <button class="btn-run" id="runBtn">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    Obfuscate
+  </button>
+  <span class="char-count" id="runInfo">paste code above, then run</span>
+</div>
+
+<!-- API docs -->
+<div class="api-bar">
+  <button class="api-toggle" id="apiToggle">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    REST API
+  </button>
+  <div class="api-content" id="apiContent">
+    <p class="api-label">POST /api/obfuscate — Content-Type: application/json</p>
+    <div class="api-block"><span class="api-key">{
+  "code"</span>: <span class="api-str">"print('hello')"</span>,          <span class="api-key">// required</span>
+  <span class="api-key">"encryptStrings"</span>:    <span class="api-bool">true</span>,        <span class="api-key">// optional</span>
+  <span class="api-key">"extraCompression"</span>:  <span class="api-bool">true</span>,
+  <span class="api-key">"enhancedSecurity"</span>:  <span class="api-bool">true</span>,
+  <span class="api-key">"dynamicOpcodeStructure"</span>: <span class="api-bool">false</span>,
+  <span class="api-key">"decryptTableLen"</span>:   <span class="api-bool">500</span>,
+  <span class="api-key">"watermark"</span>:         <span class="api-str">"77fuscator"</span>
+<span class="api-key">}</span>
+
+<span class="api-key">// Response 200</span>
+<span class="api-key">{
+  "output"</span>: <span class="api-str">"&lt;obfuscated lua&gt;"</span>,
+  <span class="api-key">"jobId"</span>:  <span class="api-str">"abc123"</span>
+<span class="api-key">}</span></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const $  = id => document.getElementById(id);
+const inputCode    = $('inputCode');
+const outputArea   = $('outputArea');
+const placeholder  = $('placeholder');
+const runBtn       = $('runBtn');
+const copyBtn      = $('copyBtn');
+const downloadBtn  = $('downloadBtn');
+const inputStatus  = $('inputStatus');
+const inputChars   = $('inputChars');
+const outputStatus = $('outputStatus');
+const outputChars  = $('outputChars');
+const runInfo      = $('runInfo');
+const toast        = $('toast');
+
+let outputText = '';
+let toastTimer;
+
+// ── Theme ──
+function getTheme() {
+  try { return localStorage.getItem('77f-theme') || 'system'; } catch { return 'system'; }
+}
+function setTheme(t) {
+  try { localStorage.setItem('77f-theme', t); } catch {}
+  if (t === 'dark')  document.documentElement.setAttribute('data-theme','dark');
+  else if (t === 'light') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+}
+setTheme(getTheme());
+$('themeBtn').addEventListener('click', () => {
+  const cur = getTheme();
+  setTheme(cur === 'dark' ? 'light' : cur === 'light' ? 'system' : 'dark');
+});
+
+// ── API toggle ──
+$('apiToggle').addEventListener('click', () => {
+  const btn = $('apiToggle'), c = $('apiContent');
+  btn.classList.toggle('open');
+  c.classList.toggle('open');
+});
+
+// ── Input counters ──
+function updateInput() {
+  const n = inputCode.value.length;
+  inputChars.textContent = n.toLocaleString() + ' chars';
+  runInfo.textContent = n > 0 ? n.toLocaleString() + ' chars ready' : 'paste code above, then run';
+}
+inputCode.addEventListener('input', updateInput);
+updateInput();
+
+// ── Status helpers ──
+function setInputStatus(label, state='') {
+  inputStatus.innerHTML = `<span class="status-dot ${state}"></span>${label}`;
+}
+function setOutputStatus(label, state='') {
+  outputStatus.innerHTML = `<span class="status-dot ${state}"></span>${label}`;
+}
+
+// ── Obfuscate ──
+runBtn.addEventListener('click', async () => {
+  const code = inputCode.value.trim();
+  if (!code) { showToast('Paste some Lua code first!'); return; }
+
+  runBtn.disabled = true;
+  runBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Obfuscating…`;
+  setInputStatus('obfuscating…', 'busy');
+  setOutputStatus('working…', 'busy');
+  placeholder.hidden = false;
+  outputArea.querySelectorAll('.output-text').forEach(e => e.remove());
+
+  try {
+    const res = await fetch('/api/obfuscate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code,
+        encryptStrings:    $('optEncrypt').checked,
+        extraCompression:  $('optCompress').checked,
+        enhancedSecurity:  $('optSecurity').checked,
+        dynamicOpcodeStructure: $('optDynamic').checked,
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setInputStatus('error', 'err');
+      setOutputStatus('failed', 'err');
+      placeholder.hidden = false;
+      placeholder.innerHTML = `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p style="color:var(--danger)">${data.error || 'Unknown error'}</p>`;
+      outputText = '';
+      copyBtn.disabled = true;
+      downloadBtn.disabled = true;
+      showToast('Obfuscation failed');
+      return;
+    }
+
+    outputText = data.output;
+    placeholder.hidden = true;
+
+    const pre = document.createElement('div');
+    pre.className = 'output-text';
+    pre.style.cssText = 'white-space:pre-wrap;word-break:break-all;min-width:0;';
+    pre.textContent = outputText;
+    outputArea.appendChild(pre);
+
+    copyBtn.disabled = false;
+    downloadBtn.disabled = false;
+    setInputStatus('done', 'ok');
+    setOutputStatus('obfuscated — ' + outputText.length.toLocaleString() + ' chars', 'ok');
+    outputChars.textContent = outputText.length.toLocaleString() + ' chars';
+    showToast('Done! ' + outputText.length.toLocaleString() + ' chars');
+
+  } catch (e) {
+    setInputStatus('network error', 'err');
+    setOutputStatus('failed', 'err');
+    placeholder.innerHTML = `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18.36 6.64A9 9 0 0 1 20.77 15"/><path d="M6.16 6.16a9 9 0 1 0 12.68 12.68"/><line x1="2" y1="2" x2="22" y2="22"/></svg><p style="color:var(--danger)">Cannot reach server</p>`;
+    placeholder.hidden = false;
+    showToast('Network error');
+  } finally {
+    runBtn.disabled = false;
+    runBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M8 5v14l11-7z"/></svg> Obfuscate`;
+  }
+});
+
+// ── Copy ──
+copyBtn.addEventListener('click', async () => {
+  if (!outputText) return;
+  try {
+    await navigator.clipboard.writeText(outputText);
+    showToast('Copied to clipboard!');
+  } catch {
+    // fallback: select text
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(outputArea);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    showToast('Select all triggered — Ctrl+C to copy');
+  }
+});
+
+// ── Download ──
+downloadBtn.addEventListener('click', () => {
+  if (!outputText) return;
+  // Use Blob + createObjectURL; <a download> doesn't work in sandboxed frames,
+  // so we open in a new tab as a last resort
+  try {
+    const blob = new Blob([outputText], { type: 'text/plain' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'obfuscated.lua';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Saved obfuscated.lua');
+  } catch {
+    showToast('Use copy instead');
+  }
+});
+
+// ── Paste ──
+$('pasteBtn').addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    inputCode.value = text;
+    updateInput();
+    showToast('Pasted from clipboard');
+  } catch {
+    inputCode.focus();
+    showToast('Click the editor and paste (Ctrl+V)');
+  }
+});
+
+// ── Clear ──
+$('clearBtn').addEventListener('click', () => {
+  inputCode.value = '';
+  updateInput();
+  outputText = '';
+  outputArea.querySelectorAll('.output-text').forEach(e => e.remove());
+  placeholder.hidden = false;
+  placeholder.innerHTML = `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8"/><path d="M12 8v8M8 12h8"/></svg><p>Obfuscated output will appear here</p>`;
+  copyBtn.disabled = true;
+  downloadBtn.disabled = true;
+  setInputStatus('ready');
+  setOutputStatus('waiting');
+  outputChars.textContent = '';
+});
+
+// ── Toast ──
+function showToast(msg) {
+  clearTimeout(toastTimer);
+  toast.textContent = msg;
+  toast.classList.add('show');
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+}
+
+// ── Tab key in textarea ──
+inputCode.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = inputCode.selectionStart, end = inputCode.selectionEnd;
+    inputCode.value = inputCode.value.substring(0, s) + '    ' + inputCode.value.substring(end);
+    inputCode.selectionStart = inputCode.selectionEnd = s + 4;
+    updateInput();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    runBtn.click();
+  }
+});
+</script>
