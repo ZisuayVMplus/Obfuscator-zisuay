@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: 77fuscator
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free           # upgrade to starter for no sleep
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+    healthCheckPath: /api/health
+    # Render free tier sleeps after 15min of inactivity
+    # Use starter plan to keep it always-on
